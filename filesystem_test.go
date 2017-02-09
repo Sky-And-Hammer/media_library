@@ -45,7 +45,7 @@ func init() {
 	media_library.RegisterCallBacks(db)
 }
 
-func TestURLWithoutFile(t testing.T) {
+func TestURLWithoutFile(t *testing.T) {
 	user := User{Name: "jack"}
 	if got, want := user.Avatar.URL(), ""; got != want {
 		t.Error(`media_library.Base#URL() == %q, want %q`, got, want)
@@ -68,6 +68,10 @@ func TestURLWithFile(t *testing.T) {
 		panic("file does't exist")
 	} else {
 		user.Avatar.Scan(avatar)
+	}
+
+	if !db.HasTable(&User{}) {
+		db.CreateTable(&User{})
 	}
 
 	if err := db.Save(&user).Error; err != nil {
@@ -159,7 +163,7 @@ func TestSaveGifIntoFileSystem(t *testing.T) {
 				t.Errorf("url should be different after crop")
 			}
 
-			file, err := os.Open(path.Join("public"), newUser.Avatar.URL("small1"))
+			file, err := os.Open(path.Join("public", newUser.Avatar.URL("small1")))
 			if err != nil {
 				t.Errorf("Failed open croped image")
 			}
@@ -182,7 +186,7 @@ func TestSaveGifIntoFileSystem(t *testing.T) {
 				t.Errorf("should saved user successfully")
 			}
 		} else {
-			panic("file doesn't exist")newUser.Avatar.Scan(`{"CropOptions": {"small1": {"X": 5, "Y": 5, "Height": 10, "Width": 20}, "small2": {"X": 0, "Y": 0, "Height": 10, "Width": 20}}, "Crop": true}`)
+			panic("file doesn't exist")
 		}
 	}
 }

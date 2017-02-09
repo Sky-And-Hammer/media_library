@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 )
 
+// FileSystem defined a media library storage using file system
 type FileSystem struct {
 	Base
 }

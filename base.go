@@ -46,6 +46,7 @@ func (fileWrapper *fileWrapper) Open() (multipart.File, error) {
 	return fileWrapper.File, nil
 }
 
+// Base defined a base struct for storages
 type Base struct {
 	FileName    string
 	Url         string
