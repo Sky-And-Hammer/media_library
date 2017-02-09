@@ -11,6 +11,7 @@ type FileSystem struct {
 	Base
 }
 
+// GetFullPath return full file path from a relative file path
 func (f FileSystem) GetFullPath(url string, option *Option) (path string, err error) {
 	if option != nil && option.Get("path") != "" {
 		path = filepath.Join(option.Get("path"), url)
@@ -26,6 +27,7 @@ func (f FileSystem) GetFullPath(url string, option *Option) (path string, err er
 	return
 }
 
+// Store save reader's context with name
 func (f FileSystem) Store(name string, option *Option, reader io.Reader) (err error) {
 	if fullpath, err := f.GetFullPath(name, option); err == nil {
 		if dst, err := os.Create(fullpath); err == nil {
@@ -35,6 +37,7 @@ func (f FileSystem) Store(name string, option *Option, reader io.Reader) (err er
 	return err
 }
 
+// Retrieve retrieve file content with url
 func (f FileSystem) Retrieve(url string) (*os.File, error) {
 	if fullpath, err := f.GetFullPath(url, nil); err == nil {
 		return os.Open(fullpath)
