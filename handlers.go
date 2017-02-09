@@ -14,15 +14,18 @@ import (
 
 var mediaHandlers = make(map[string]MediaHandler)
 
+// MediaHandler media library handler interface, defined which files could be handled, and the handler
 type MediaHandler interface {
 	CouldHandle(media Media) bool
 	Handle(media Media, file multipart.File, option *Option) error
 }
 
+// RegisterMediaHandler register Media library handler
 func RegisterMediaHandler(name string, handler MediaHandler) {
 	mediaHandlers[name] = handler
 }
 
+// imageHandler default image handler
 type imageHandler struct{}
 
 func (imageHandler) CouldHandle(media Media) bool {
@@ -33,8 +36,10 @@ func (imageHandler) Handle(media Media, file multipart.File, option *Option) (er
 	var fileBuffer bytes.Buffer
 	if fileBytes, err := ioutil.ReadAll(file); err == nil {
 		fileBuffer.Write(fileBytes)
+
 		if err = media.Store(media.URL("original"), option, &fileBuffer); err == nil {
 			file.Seek(0, 0)
+
 			if format, err := getImageFormat(media.URL()); err == nil {
 				if *format == imaging.GIF {
 					var buffer bytes.Buffer
@@ -57,6 +62,7 @@ func (imageHandler) Handle(media Media, file multipart.File, option *Option) (er
 						return err
 					}
 
+					// save sizes image
 					for key, size := range media.GetSizes() {
 						file.Seek(0, 0)
 						if g, err := gif.DecodeAll(file); err == nil {
@@ -65,7 +71,6 @@ func (imageHandler) Handle(media Media, file multipart.File, option *Option) (er
 								if cropOption := media.GetCropOption(key); cropOption != nil {
 									img = imaging.Crop(g.Image[i], *cropOption)
 								}
-
 								img = imaging.Thumbnail(img, size.Width, size.Height, imaging.Lanczos)
 								g.Image[i] = image.NewPaletted(image.Rect(0, 0, size.Width, size.Height), g.Image[i].Palette)
 								draw.Draw(g.Image[i], image.Rect(0, 0, size.Width, size.Height), img, image.Pt(0, 0), draw.Src)
@@ -80,14 +85,17 @@ func (imageHandler) Handle(media Media, file multipart.File, option *Option) (er
 					}
 				} else {
 					if img, err := imaging.Decode(file); err == nil {
+						// save original image
 						if cropOption := media.GetCropOption("original"); cropOption != nil {
 							img = imaging.Crop(img, *cropOption)
 						}
 
+						// Save default image
 						var buffer bytes.Buffer
 						imaging.Encode(&buffer, img, *format)
 						media.Store(media.URL(), option, &buffer)
 
+						// save sizes image
 						for key, size := range media.GetSizes() {
 							newImage := img
 							if cropOption := media.GetCropOption(key); cropOption != nil {

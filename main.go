@@ -13,17 +13,18 @@ import (
 	"github.com/Sky-And-Hammer/TM_EC/utils"
 )
 
-// 'Size' is a struct, used for 'GetSizes' method, is will return a slice of size, media library will crop images automatically based on it
+// Size is a struct, used for `GetSizes` method, it will return a slice of Size, media library will crop images automatically based on it
 type Size struct {
-	Width, Height int
+	Width  int
+	Height int
 }
 
-// 'URLTemplater' is a interface to return url template
+// URLTemplater is a interface to return url template
 type URLTemplater interface {
 	GetURLTemplate(*Option) string
 }
 
-// 'Media' is an interface including methods that needs for a media library storages
+// MediaLibrary is an interface including methods that needs for a media library storage
 type Media interface {
 	Scan(value interface{}) error
 	Value() (driver.Value, error)
@@ -49,10 +50,10 @@ type Media interface {
 	String() string
 }
 
-// 'Option' media library option
+// Option media library option
 type Option map[string]string
 
-// 'Get' used to get option with name
+// Get used to get option with name
 func (option Option) Get(key string) string {
 	return option[strings.ToUpper(key)]
 }

@@ -32,6 +32,7 @@ func cropField(field *gorm.Field, scope *gorm.Scope) (cropped bool) {
 				}
 
 				media.Cropped(true)
+
 				if url := media.GetURL(option, scope, field, media); url == "" {
 					scope.Err(errors.New("invalid URL"))
 				} else {
@@ -51,16 +52,15 @@ func cropField(field *gorm.Field, scope *gorm.Scope) (cropped bool) {
 						}
 					}
 
+					// Save File
 					if !handled {
 						scope.Err(media.Store(media.URL(), option, file))
 					}
 				}
-
 				return true
 			}
 		}
 	}
-
 	return false
 }
 
@@ -68,9 +68,11 @@ func saveAndCropImage(isCreate bool) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if !scope.HasError() {
 			var updateColumns = map[string]interface{}{}
+
+			// Handle SerializableMeta
 			if value, ok := scope.Value.(serializable_meta.SerializableMetaInterface); ok {
 				var (
-					isCroped         bool
+					isCropped        bool
 					handleNestedCrop func(record interface{})
 				)
 
@@ -78,7 +80,7 @@ func saveAndCropImage(isCreate bool) func(scope *gorm.Scope) {
 					newScope := scope.New(record)
 					for _, field := range newScope.Fields() {
 						if cropField(field, scope) {
-							isCroped = true
+							isCropped = true
 							continue
 						}
 
@@ -96,11 +98,12 @@ func saveAndCropImage(isCreate bool) func(scope *gorm.Scope) {
 
 				record := value.GetSerializableArgument(value)
 				handleNestedCrop(record)
-				if isCreate && isCroped {
+				if isCreate && isCropped {
 					updateColumns["value"], _ = json.Marshal(record)
 				}
 			}
 
+			// Handle Normal Field
 			for _, field := range scope.Fields() {
 				if cropField(field, scope) && isCreate {
 					updateColumns[field.DBName] = field.Field.Interface()
@@ -114,7 +117,8 @@ func saveAndCropImage(isCreate bool) func(scope *gorm.Scope) {
 	}
 }
 
-func RegisterCallBacks(db *gorm.DB) {
-	db.Callback().Update().Before("gorm:beform_update").Register("media_library:save_and_crop", saveAndCropImage(false))
+// RegisterCallbacks register callback into GORM DB
+func RegisterCallbacks(db *gorm.DB) {
+	db.Callback().Update().Before("gorm:before_update").Register("media_library:save_and_crop", saveAndCropImage(false))
 	db.Callback().Create().After("gorm:after_create").Register("media_library:save_and_crop", saveAndCropImage(true))
 }

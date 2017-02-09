@@ -14,11 +14,13 @@ import (
 	"github.com/Sky-And-Hammer/admin"
 )
 
+// 'AssetManager' defined a asset manager that could be used to manage assets in qor admin
 type AssetManager struct {
 	gorm.Model
 	File FileSystem `media_library:"URL:/system/assets/{{primary_key}}/{{filename_with_hash}}"`
 }
 
+// 'ConfigureECResource' configure qor locale for Qor Admin
 func (*AssetManager) ConfigureECResource(res resource.Resourcer) {
 	if res, ok := res.(*admin.Resource); ok {
 		router := res.GetAdmin().GetRouter()
@@ -30,7 +32,7 @@ func (*AssetManager) ConfigureECResource(res resource.Resourcer) {
 			context.Writer.Write(bytes)
 		})
 
-		assetURL := regexp.MustCompile(`^/system/asset/(\d+)/`)
+		assetURL := regexp.MustCompile(`^/system/assets/(\d+)/`)
 		router.Post(fmt.Sprintf("/%v/crop", res.ToParam()), func(context *admin.Context) {
 			defer context.Request.Body.Close()
 			var (

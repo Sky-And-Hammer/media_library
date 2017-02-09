@@ -41,7 +41,7 @@ type MediaOption struct {
 	Sizes        map[string]*Size       `json:",omitempty"`
 	SelectedType string                 `json:",omitempty"`
 	Description  string                 `json:",omitempty"`
-	Crop         bool                   `json:",omitempty"`
+	Crop         bool
 }
 
 func (mediaLibrary *MediaLibrary) ScanMediaOptions(mediaOption MediaOption) error {
@@ -90,7 +90,7 @@ type MediaLibraryStorage struct {
 }
 
 func (mediaLibraryStorage MediaLibraryStorage) GetSizes() map[string]*Size {
-	if len(mediaLibraryStorage.Sizes) == 0 && !(mediaLibraryStorage.GetFieldHeader() != nil || mediaLibraryStorage.Crop) {
+	if len(mediaLibraryStorage.Sizes) == 0 && !(mediaLibraryStorage.GetFileHeader() != nil || mediaLibraryStorage.Crop) {
 		return map[string]*Size{}
 	}
 
@@ -101,66 +101,64 @@ func (mediaLibraryStorage MediaLibraryStorage) GetSizes() map[string]*Size {
 	for key, value := range mediaLibraryStorage.Sizes {
 		sizes[key] = value
 	}
-
 	return sizes
 }
 
-func (meidalibraryStorage MediaLibraryStorage) Scan(data interface{}) (err error) {
+func (mediaLibraryStorage *MediaLibraryStorage) Scan(data interface{}) (err error) {
 	switch values := data.(type) {
 	case []byte:
-		if meidalibraryStorage.Sizes == nil {
-			meidalibraryStorage.Sizes = map[string]*Size{}
+		if mediaLibraryStorage.Sizes == nil {
+			mediaLibraryStorage.Sizes = map[string]*Size{}
 		}
-
-		if meidalibraryStorage.CropOptions == nil {
-			meidalibraryStorage.CropOptions = map[string]*CropOption{}
+		if mediaLibraryStorage.CropOptions == nil {
+			mediaLibraryStorage.CropOptions = map[string]*CropOption{}
 		}
+		cropOptions := mediaLibraryStorage.CropOptions
+		sizeOptions := mediaLibraryStorage.Sizes
 
-		cropOptions := meidalibraryStorage.CropOptions
-		sizeOptions := meidalibraryStorage.Sizes
 		if string(values) != "" {
-			meidalibraryStorage.Base.Scan(values)
-			if err = json.Unmarshal(values, meidalibraryStorage); err == nil {
+			mediaLibraryStorage.Base.Scan(values)
+
+			if err = json.Unmarshal(values, mediaLibraryStorage); err == nil {
 				for key, value := range cropOptions {
-					if _, ok := meidalibraryStorage.CropOptions[key]; !ok {
-						meidalibraryStorage.CropOptions[key] = value
+					if _, ok := mediaLibraryStorage.CropOptions[key]; !ok {
+						mediaLibraryStorage.CropOptions[key] = value
 					}
 				}
 
 				for key, value := range sizeOptions {
-					if _, ok := meidalibraryStorage.Sizes[key]; !ok {
-						meidalibraryStorage.Sizes[key] = value
+					if _, ok := mediaLibraryStorage.Sizes[key]; !ok {
+						mediaLibraryStorage.Sizes[key] = value
 					}
 				}
 
-				for key, value := range meidalibraryStorage.CropOptions {
-					if _, ok := meidalibraryStorage.Sizes[key]; !ok {
-						meidalibraryStorage.Sizes[key] = &Size{Width: value.Width, Height: value.Height}
+				for key, value := range mediaLibraryStorage.CropOptions {
+					if _, ok := mediaLibraryStorage.Sizes[key]; !ok {
+						mediaLibraryStorage.Sizes[key] = &Size{Width: value.Width, Height: value.Height}
 					}
 				}
 			}
 		}
 	case string:
-		err = meidalibraryStorage.Scan([]byte(values))
+		err = mediaLibraryStorage.Scan([]byte(values))
 	case []string:
 		for _, str := range values {
-			if err = meidalibraryStorage.Scan(str); err != nil {
+			if err = mediaLibraryStorage.Scan(str); err != nil {
 				return err
 			}
 		}
 	default:
-		return meidalibraryStorage.Base.Scan(data)
+		return mediaLibraryStorage.Base.Scan(data)
 	}
-
 	return nil
 }
 
-func (meidalibraryStorage MediaLibraryStorage) Value() (driver.Value, error) {
-	results, err := json.Marshal(meidalibraryStorage)
+func (mediaLibraryStorage MediaLibraryStorage) Value() (driver.Value, error) {
+	results, err := json.Marshal(mediaLibraryStorage)
 	return string(results), err
 }
 
-func (meidalibraryStorage MediaLibraryStorage) ConfigureECMeta(metaor resource.Metaor) {
+func (mediaLibraryStorage MediaLibraryStorage) ConfigureECMeta(metaor resource.Metaor) {
 	if meta, ok := metaor.(*admin.Meta); ok {
 		meta.Type = "media_library"
 		meta.SetFormattedValuer(func(record interface{}, context *TM_EC.Context) interface{} {
@@ -181,7 +179,7 @@ func (mediaBox MediaBox) URL(styles ...string) string {
 	return ""
 }
 
-func (mediaBox MediaBox) Scan(data interface{}) (err error) {
+func (mediaBox *MediaBox) Scan(data interface{}) (err error) {
 	switch values := data.(type) {
 	case []byte:
 		if mediaBox.Values = string(values); mediaBox.Values != "" {
@@ -203,7 +201,6 @@ func (mediaBox MediaBox) Value() (driver.Value, error) {
 	if len(mediaBox.Files) > 0 {
 		return json.Marshal(mediaBox.Files)
 	}
-
 	return mediaBox.Values, nil
 }
 
@@ -340,7 +337,6 @@ func (file File) URL(styles ...string) string {
 		ext := path.Ext(file.Url)
 		return fmt.Sprintf("%v.%v%v", strings.TrimSuffix(file.Url, ext), styles[0], ext)
 	}
-
 	return file.Url
 }
 
@@ -358,7 +354,6 @@ func (mediaBox MediaBox) Crop(res *admin.Resource, db *gorm.DB, mediaOption Medi
 				err = errors.New("invalid media library resource")
 			}
 		}
-
 		if err != nil {
 			return
 		}
@@ -366,6 +361,7 @@ func (mediaBox MediaBox) Crop(res *admin.Resource, db *gorm.DB, mediaOption Medi
 	return
 }
 
+// MediaBoxConfig configure MediaBox metas
 type MediaBoxConfig struct {
 	RemoteDataResource *admin.Resource
 	Sizes              map[string]*Size
@@ -374,9 +370,8 @@ type MediaBoxConfig struct {
 }
 
 func (*MediaBoxConfig) ConfigureECMeta(resource.Metaor) {
-
 }
 
 func (*MediaBoxConfig) GetTemplate(context *admin.Context, metaType string) ([]byte, error) {
-	return nil, errors.New("not implement")
+	return nil, errors.New("not implemented")
 }
