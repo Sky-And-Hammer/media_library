@@ -42,7 +42,7 @@ func init() {
 	}
 
 	db.AutoMigrate(&User{})
-	media_library.RegisterCallBacks(db)
+	media_library.RegisterCallbacks(db)
 }
 
 func TestURLWithoutFile(t *testing.T) {
@@ -103,7 +103,7 @@ func TestURLWithFile(t *testing.T) {
 }
 
 func TestSaveIntoFileSystem(t *testing.T) {
-	var user = User{Name: "jack"}
+	var user = User{Name: "jinzhu"}
 	if avatar, err := os.Open("test/logo.png"); err == nil {
 		user.Avatar.Scan(avatar)
 		if err := db.Save(&user).Error; err == nil {
@@ -113,8 +113,9 @@ func TestSaveIntoFileSystem(t *testing.T) {
 
 			var newUser User
 			db.First(&newUser, user.ID)
-			newUser.Avatar.Scan(`{"CropOptions":{"small1": {"X": 5, "Y": 5, "Height": 10. "Width": 20}, "small2": {"X": 0, "Y": 0, "Height": 10, "Width": 20}}, "Crop": true}`)
+			newUser.Avatar.Scan(`{"CropOptions": {"small1": {"X": 5, "Y": 5, "Height": 10, "Width": 20}, "small2": {"X": 0, "Y": 0, "Height": 10, "Width": 20}}, "Crop": true}`)
 			db.Save(&newUser)
+
 			if newUser.Avatar.URL() == user.Avatar.URL() {
 				t.Errorf("url should be different after crop")
 			}
@@ -129,13 +130,13 @@ func TestSaveIntoFileSystem(t *testing.T) {
 					t.Errorf("image should be croped successfully")
 				}
 			} else {
-				t.Errorf("failed to decode croped image")
+				t.Errorf("Failed to decode croped image")
 			}
 		} else {
 			t.Errorf("should saved user successfully")
 		}
 	} else {
-		panic("file does't exist")
+		panic("file doesn't exist")
 	}
 }
 
